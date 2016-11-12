@@ -1,7 +1,7 @@
 clear
 ##This is the default file name if the user doesn't select any file
 filename="movies"
-
+hint=0
 ##These are the stick figures to be displayed if the user does a wrong guess
 
 function wrong1 {
@@ -163,20 +163,31 @@ function file_select() {
     esac
 }
 
+function omdb() {
+    #statements
+    hint=$(($hint + 1))
+    url="http://www.omdbapi.com/?t="
+    other_part="&plot=short&r=json"
+    murl=$(echo $movie | tr " " "+")
+    final=$url$murl$other_part
+    plot=$(curl -s "$final" | python -c "import sys, json; print json.load(sys.stdin)['Plot']")
+    actors=$(curl -s "$final" | python -c "import sys, json; print json.load(sys.stdin)['Actors']")
+}
+
 function main() {
     ##The function used to read the word list
     readarray a < $filename
 
     randind=`expr $RANDOM % ${#a[@]}`
 
-    movie=${a[$randind]}
+    orig_movie=${a[$randind]}
 
     guess=()
 
     guesslist=()
     guin=0
 
-    movie=`echo $movie | tr -dc '[:alnum:] \n\r' | tr '[:upper:]' '[:lower:]'`
+    movie=`echo $orig_movie | tr -dc '[:alnum:] \n\r' | tr '[:upper:]' '[:lower:]'`
     len=${#movie}
 
     for ((i=0;i<$len;i++)); do
@@ -240,9 +251,23 @@ function main() {
         echo
         echo
 
+        if [[ $filename == "movies" || $filename == "bollywood" ]]; then
+            if [[ $hint -ge 1 ]]; then
+                echo Plot: $plot
+            fi
+            if [[ $hint -ge 2 ]]; then
+                echo Actors: $actors
+            fi
+        fi
+
         if [[ notover -eq 1 ]]; then
             echo -n "Guess a letter: "
             read -n 1 -e letter
+            if [[ $letter == "1" ]]; then
+                if [[ $filename == "movies" || $filename == "bollywood" ]]; then
+                    omdb
+                fi
+            fi
             letter=$(echo $letter | tr [A-Z] [a-z])
             guesslist[$guin]=$letter
             guin=`expr $guin + 1`
@@ -262,7 +287,7 @@ function main() {
         if [[ notover -eq 0 ]]; then
             echo
             echo You Win!
-            echo $movie
+            echo $orig_movie
             echo
             tput cnorm
             exit
@@ -272,7 +297,7 @@ function main() {
 
     wrong7
     echo You lost!
-    echo The word was: $movie
+    echo The word was: $orig_movie
     tput cnorm
 }
 
