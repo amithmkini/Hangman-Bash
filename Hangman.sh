@@ -2,6 +2,7 @@ clear
 ##This is the default file name if the user doesn't select any file
 filename="movies"
 hint=0
+dict_key="c2984b7e-578d-4a4c-bfe0-c7a35fcb43bb"
 ##These are the stick figures to be displayed if the user does a wrong guess
 
 function wrong1 {
@@ -174,6 +175,18 @@ function omdb() {
     actors=$(curl -s "$final" | python -c "import sys, json; print json.load(sys.stdin)['Actors']")
 }
 
+function dict() {
+
+    hint=$(($hint + 1))
+    url="http://www.dictionaryapi.com/api/v1/references/collegiate/xml/"
+    other_part="?key="$dict_key
+    murl=$(echo $movie | tr " " "+")
+    final=$url$murl$other_part
+    xml=$(curl -s "$final")
+    clue=$(grep -oPm1 "(?<=<dt>)[^<]+" <<< $xml)
+    echo $final
+}
+
 function main() {
     ##The function used to read the word list
     readarray a < $filename
@@ -258,7 +271,12 @@ function main() {
             if [[ $hint -ge 2 ]]; then
                 echo Actors: $actors
             fi
+        elif [[ $filename == "/usr/share/dict/american-english" ]]; then
+            if [[ $hint -ge 1 ]]; then
+                echo Meaning $clue
+            fi
         fi
+
 
         if [[ notover -eq 1 ]]; then
             echo -n "Guess a letter: "
@@ -266,6 +284,8 @@ function main() {
             if [[ $letter == "1" ]]; then
                 if [[ $filename == "movies" || $filename == "bollywood" ]]; then
                     omdb
+                elif [[ $filename == "/usr/share/dict/american-english" ]]; then
+                    dict
                 fi
             fi
             letter=$(echo $letter | tr [A-Z] [a-z])
