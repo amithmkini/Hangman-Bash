@@ -169,7 +169,7 @@ function omdb() {
     hint=$(($hint + 1))
     url="http://www.omdbapi.com/?t="
     other_part="&plot=short&r=json"
-    murl=$(echo $movie | tr " " "+")
+    murl=$(echo $orig_movie | tr " " "+")
     final=$url$murl$other_part
     plot=$(curl -s "$final" | python -c "import sys, json; print json.load(sys.stdin)['Plot']")
     actors=$(curl -s "$final" | python -c "import sys, json; print json.load(sys.stdin)['Actors']")
@@ -273,7 +273,11 @@ function main() {
             fi
         elif [[ $filename == "/usr/share/dict/american-english" ]]; then
             if [[ $hint -ge 1 ]]; then
-                echo Meaning $clue
+                if [[ $clue == "" ]]; then
+                    wrong=$(($wrong - 1))
+                else
+                    echo Meaning $clue
+                fi
             fi
         fi
 
